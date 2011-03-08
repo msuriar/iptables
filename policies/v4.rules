@@ -1,0 +1,32 @@
+*filter
+# Defaults
+:INPUT DROP
+:FORWARD DROP
+:OUTPUT ACCEPT
+
+# Permit loopback
+-A INPUT -i lo -j ACCEPT
+-A OUTPUT -o lo -j ACCEPT
+
+# ICMP
+-A INPUT -p icmp --icmp-type echo-reply -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 5/s -m state --state NEW -j ACCEPT
+-A INPUT -p icmp --icmp-type destination-unreachable -m state --state NEW -j ACCEPT
+-A INPUT -p icmp --icmp-type time-exceeded -m state --state NEW -j ACCEPT
+-A INPUT -p icmp --icmp-type timestamp-request -m state --state NEW -j ACCEPT
+-A INPUT -p icmp --icmp-type timestamp-reply -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Block new connections without a SYN
+-A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+
+# Permit establish connections
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Permit inbound SSH
+-A INPUT -p tcp --dport 22 -m state --state NEW -j ACCEPT
+
+# Malformed packets
+-A INPUT -p tcp --tcp-flags ALL ACK,RST,SYN,FIN -j DROP
+-A INPUT -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+-A INPUT -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+COMMIT

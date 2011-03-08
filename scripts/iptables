@@ -1,0 +1,4 @@
+#!/bin/sh
+# To be placed in /etc/network/if-pre-up.d/ on Debian systems
+/sbin/iptables-restore < /etc/iptables/v4.rules
+/sbin/ip6tables-restore < /etc/iptables/v6.rules
