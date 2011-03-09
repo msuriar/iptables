@@ -1,0 +1,45 @@
+*filter
+# Defaults
+:INPUT DROP
+:FORWARD DROP
+:OUTPUT ACCEPT
+
+# Permit to/from loopback
+-A INPUT -i lo -j ACCEPT
+-A OUTPUT -o lo -j ACCEPT
+
+# ICMP chain
+-N ipv6-icmp-filter
+
+# Allow echo replies.
+-A ipv6-icmp-filter -p ipv6-icmp --icmpv6-type echo-reply -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Allow 5 echo-requests per second.
+-A ipv6-icmp-filter -p ipv6-icmp --icmpv6-type echo-request -m limit --limit 5/s -m state --state NEW -j ACCEPT
+
+# Permit link local for neighbour discovery
+-A ipv6-icmp-filter -p ipv6-icmp -s fe80::/10 --icmpv6-type neighbour-solicitation -j ACCEPT
+-A ipv6-icmp-filter -p ipv6-icmp -s fe80::/10 --icmpv6-type neighbour-advertisement -j ACCEPT
+-A ipv6-icmp-filter -p ipv6-icmp -s fe80::/10 --icmpv6-type router-solicitation -j ACCEPT
+-A ipv6-icmp-filter -p ipv6-icmp -s fe80::/10 --icmpv6-type router-advertisement -j ACCEPT
+
+
+
+# Send ICMP to separate chain because it's crazy.
+-A INPUT -p icmpv6 -j ipv6-icmp-filter
+
+# Drop out of state new connections
+-A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+
+# Accept established connections.
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Accept inbound SSH
+-A INPUT -p tcp --dport 22 -m state --state NEW -j ACCEPT
+
+# Malformed packets.
+-A INPUT -p tcp --tcp-flags ALL ACK,RST,SYN,FIN -j DROP
+-A INPUT -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+-A INPUT -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+
+COMMIT
