@@ -25,6 +25,9 @@
 # Permit inbound SSH
 -A INPUT -p tcp --dport 22 -m state --state NEW -j ACCEPT
 
+# Permit Mosh
+-A INPUT -p udp -m multiport --dports 60000:60100 -j ACCEPT
+
 # Malformed packets
 -A INPUT -p tcp --tcp-flags ALL ACK,RST,SYN,FIN -j DROP
 -A INPUT -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
